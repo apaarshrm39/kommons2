@@ -1,0 +1,28 @@
+name: Kommons-Gated-PR-Tests
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: flanksource/build-tools:v0.13.6
+    steps:
+    - uses: actions/checkout@v2
+      with:
+      #Using Main branch of Karina Repository
+       repository: flanksource/karina
+    - run: |
+        module=$(cat go.mod | grep github.com/flanksource/kommons | awk '{print $2}')
+        go mod edit -replace github.com/flanksource/kommons@$module=github.com/${{ github.repository }}@${{ github.head_ref }}  
+        cat go.mod
+        go mod tidy
+      name: replace Module
+    - name: Test Make Linux
+      run: make linux
+    - uses: actions/upload-artifact@v2
+      with:
+        name: karina
+        path: ./.bin/karina
